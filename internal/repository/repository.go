@@ -27,9 +27,14 @@ func NewInMemoryRepository() handler.OrderRepository {
 }
 
 func (r *repository) Migrate() error {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
+	withLock(&r.mutex, func() {
+		r.migrate()
+	})
 
+	return nil
+}
+
+func (r *repository) migrate() {
 	initAvailability := []model.RoomAvailability{
 		{"reddison", "lux", date(2024, 1, 1), 1},
 		{"reddison", "lux", date(2024, 1, 2), 1},
@@ -50,8 +55,16 @@ func (r *repository) Migrate() error {
 	}
 
 	r.availability = availability
+}
 
-	return nil
+func withLock(locker sync.Locker, action func()) {
+	if action == nil {
+		return
+	}
+
+	locker.Lock()
+	action()
+	locker.Unlock()
 }
 
 func (r *repository) CreateOrder(newOrder *model.Order) error {
@@ -65,6 +78,16 @@ func (r *repository) CreateOrder(newOrder *model.Order) error {
 	r.saveOrder(newOrder)
 
 	return nil
+}
+
+func (r *repository) ClearAndMigrate() {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	clear(r.availability)
+	r.orders = r.orders[0:0:0]
+
+	r.migrate()
 }
 
 func (r *repository) saveOrder(newOrder *model.Order) {

@@ -62,3 +62,10 @@ func (h *OrderHandler) GetOrders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+func (h *OrderHandler) DeleteOrders(w http.ResponseWriter, r *http.Request) {
+	h.repo.ClearAndMigrate()
+	w.Header().Set("Content-Type", "application/json")
+
+	w.WriteHeader(http.StatusOK)
+}

@@ -18,7 +18,10 @@ func main() {
 	router := chi.NewRouter()
 
 	repo := repository.NewInMemoryRepository()
-	repo.Migrate()
+	err := repo.Migrate()
+	if err != nil {
+		panic("Check migration failed: " + err.Error())
+	}
 
 	orderHandler := handler.NewOrderHandler(repo)
 
@@ -26,6 +29,7 @@ func main() {
 
 	router.Post("/orders", orderHandler.CreateOrder)
 	router.Get("/orders/all", orderHandler.GetOrders)
+	router.Delete("/orders/all", orderHandler.DeleteOrders)
 
 	slog.Info("Server listening localhost:8080")
 	if err := http.ListenAndServe("localhost:8080", router); err != nil {
