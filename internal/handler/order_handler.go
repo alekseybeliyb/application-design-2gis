@@ -3,8 +3,13 @@ package handler
 import (
 	"app-booking/internal/model"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
+)
+
+var (
+	ErrTimeRange = errors.New("time range of from and to")
 )
 
 type OrderHandler struct {
@@ -21,6 +26,12 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	var order model.Order
 	if err := json.NewDecoder(r.Body).Decode(&order); err != nil {
 		slog.Error("Incorrect request body", err)
+		http.Error(w, "Incorrect request body", http.StatusBadRequest)
+		return
+	}
+
+	if !order.Validate() {
+		slog.Error("Incorrect request body", ErrTimeRange)
 		http.Error(w, "Incorrect request body", http.StatusBadRequest)
 		return
 	}

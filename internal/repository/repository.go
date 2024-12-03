@@ -62,9 +62,13 @@ func (r *repository) CreateOrder(newOrder *model.Order) error {
 	if err != nil {
 		return err
 	}
-	r.orders = append(r.orders, *newOrder)
+	r.saveOrder(newOrder)
 
 	return nil
+}
+
+func (r *repository) saveOrder(newOrder *model.Order) {
+	r.orders = append(r.orders, *newOrder)
 }
 
 func (r *repository) GetAllOrders() ([]model.Order, error) {
@@ -72,8 +76,11 @@ func (r *repository) GetAllOrders() ([]model.Order, error) {
 }
 
 func (r *repository) decrementQuota(newOrder *model.Order) error {
-	tempAvailability := make(map[model.HRKey]map[time.Time]int, len(r.availability))
-	maps.Copy(tempAvailability, r.availability)
+	tempAvailability := maps.Clone(r.availability)
+
+	for key, _ := range tempAvailability {
+		tempAvailability[key] = maps.Clone(r.availability[key])
+	}
 
 	for _, dayFromOrder := range newOrder.GetRangeFromOrder() {
 		key := model.HRKey{HotelId: newOrder.HotelID, RoomId: newOrder.RoomID}

@@ -10,6 +10,29 @@ type Order struct {
 	To      time.Time `json:"to"`
 }
 
+func (r *Order) Validate() bool {
+	if r.HotelID == "" {
+		return false
+	}
+
+	if r.RoomID == "" {
+		return false
+	}
+
+	if r.Email == "" {
+		return false
+	}
+
+	if r.To.IsZero() || r.To.IsZero() {
+		return false
+	}
+
+	if len(r.GetRangeFromOrder()) < 2 {
+		return false
+	}
+	return true
+}
+
 func (r *Order) GetRangeFromOrder() []time.Time {
 	if r.From.After(r.To) {
 		return nil
