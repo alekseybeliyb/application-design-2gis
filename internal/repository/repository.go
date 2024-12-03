@@ -67,14 +67,19 @@ func (r *repository) CreateOrder(newOrder *model.Order) error {
 	return nil
 }
 
+func (r *repository) GetAllOrders() ([]model.Order, error) {
+	return r.orders, nil
+}
+
 func (r *repository) decrementQuota(newOrder *model.Order) error {
-	copyAvailability := make(map[model.HRKey]map[time.Time]int, len(r.availability))
-	maps.Copy(copyAvailability, r.availability)
-	for currentDate := newOrder.From; currentDate.Before(newOrder.To); currentDate = currentDate.AddDate(0, 0, 1) {
+	tempAvailability := make(map[model.HRKey]map[time.Time]int, len(r.availability))
+	maps.Copy(tempAvailability, r.availability)
+
+	for _, dayFromOrder := range newOrder.GetRangeFromOrder() {
 		key := model.HRKey{HotelId: newOrder.HotelID, RoomId: newOrder.RoomID}
-		if dateQuota, ok := copyAvailability[key]; ok {
-			if day, dayExists := dateQuota[currentDate]; dayExists && day >= 1 {
-				dateQuota[currentDate]--
+		if dateQuota, ok := tempAvailability[key]; ok {
+			if day, dayExists := dateQuota[dayFromOrder]; dayExists && day >= 1 {
+				dateQuota[dayFromOrder]--
 			} else {
 				return ErrNoAvailability
 			}
@@ -82,13 +87,9 @@ func (r *repository) decrementQuota(newOrder *model.Order) error {
 			return ErrNoAvailability
 		}
 	}
-	r.availability = copyAvailability
+	r.availability = tempAvailability
 
 	return nil
-}
-
-func (r *repository) GetAllOrders() ([]model.Order, error) {
-	return r.orders, nil
 }
 
 func date(year, month, day int) time.Time {
